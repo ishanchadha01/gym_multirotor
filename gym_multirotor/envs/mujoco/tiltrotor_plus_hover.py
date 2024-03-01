@@ -17,13 +17,13 @@ class TiltrotorPlus8DofHoverEnv(QuadrotorPlusHoverEnv):
     obs_tilt_index = np.arange(18, 22)
     action_index_tilt = np.arange(4, 8)
 
-    def __init__(self, xml_name="tiltrotor_plus_hover.xml", frame_skip=5, env_bounding_box=1.2, randomize_reset=False):
+    def __init__(self, xml_name="tiltrotor_plus_hover.xml", frame_skip=5, env_bounding_box=1.2, randomize_reset=False, **kwargs):
 
         self.tilt_position_reward_constant = 1.0
         """float: Reward constant for position of the tilt servo.
         """
 
-        super(TiltrotorPlus8DofHoverEnv, self).__init__(xml_name=xml_name, frame_skip=frame_skip, env_bounding_box=env_bounding_box, randomize_reset=randomize_reset)
+        super(TiltrotorPlus8DofHoverEnv, self).__init__(xml_name=xml_name, frame_skip=frame_skip, env_bounding_box=env_bounding_box, randomize_reset=randomize_reset, **kwargs)
 
     def _get_obs(self):
         """
@@ -33,8 +33,8 @@ class TiltrotorPlus8DofHoverEnv(QuadrotorPlusHoverEnv):
              numpy.ndarray: Observation vector of shape (22,). The elements of the observation tuple include (xyz, rotation_matrix, linear_velocity, angular_velocity, tilt_angles).
         """
 
-        qpos = self.sim.data.qpos.copy()
-        qvel = self.sim.data.qvel.copy()
+        qpos = self.data.qpos.copy()
+        qvel = self.data.qvel.copy()
 
         self.mujoco_qvel = np.array(qvel)
         self.mujoco_qpos = np.array(qpos)

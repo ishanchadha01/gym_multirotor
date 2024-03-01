@@ -44,11 +44,11 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium import utils
-from gymnasium.envs.mujoco import mujoco_env
+from gymnasium.envs.mujoco import MujocoEnv
 from gym_multirotor import utils as multirotor_utils
 
 
-class UAVBaseEnv(mujoco_env.MujocoEnv, utils.EzPickle, ABC):
+class UAVBaseEnv(MujocoEnv, utils.EzPickle, ABC):
     """Abstract base class for UAV environment.
 
     Args:
@@ -80,6 +80,15 @@ class UAVBaseEnv(mujoco_env.MujocoEnv, utils.EzPickle, ABC):
 
     """
 
+    metadata = {
+        "render_modes": [
+            "human",
+            "rgb_array",
+            "depth_array",
+        ],
+        "render_fps": 20,
+    }
+
     obs_xyz_index = np.arange(0, 3)
     obs_rot_mat_index = np.arange(3, 12)
     obs_vel_index = np.arange(12, 15)
@@ -109,8 +118,8 @@ class UAVBaseEnv(mujoco_env.MujocoEnv, utils.EzPickle, ABC):
                  angular_velocity_reward_constant=0.001,
                  action_reward_constant=0.0025,
                  reward_for_staying_alive=5.0,
-                 reward_scaling_coefficient=1.0
-                 ):
+                 reward_scaling_coefficient=1.0,
+                 **kwargs):
         xml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets", xml_name))
 
         self.error_tolerance = error_tolerance
@@ -238,8 +247,34 @@ class UAVBaseEnv(mujoco_env.MujocoEnv, utils.EzPickle, ABC):
         self._time = 0              # initialize time counter.
         self.gravity_mag = 9.81     # default value of acceleration due to gravity
 
-        utils.EzPickle.__init__(self)
-        mujoco_env.MujocoEnv.__init__(self, xml_path, frame_skip)
+        observation_space = spaces.Box(
+            low=-np.inf, high=np.inf, shape=(111,), dtype=np.float64
+        )
+
+        utils.EzPickle.__init__(self,
+                                xml_name,
+                                frame_skip,
+                                error_tolerance,
+                                max_time_steps,
+                                randomize_reset,
+                                disorient,
+                                sample_SO3,
+                                observation_noise_std,
+                                reduce_heading_error,
+                                env_bounding_box,
+                                init_max_vel,
+                                init_max_angular_vel,
+                                init_max_attitude,
+                                bonus_to_reach_goal,
+                                max_reward_for_velocity_towards_goal,
+                                position_reward_constant,
+                                orientation_reward_constant,
+                                linear_velocity_reward_constant,
+                                angular_velocity_reward_constant,
+                                action_reward_constant,
+                                reward_for_staying_alive,
+                                reward_scaling_coefficient)
+        MujocoEnv.__init__(self, xml_path, frame_skip, observation_space, **kwargs)
 
         self.gravity_mag = float(abs(self.model.opt.gravity[2]))
 
@@ -280,7 +315,8 @@ class UAVBaseEnv(mujoco_env.MujocoEnv, utils.EzPickle, ABC):
         notdone = np.isfinite(ob).all()
         done = not notdone
         info = {"reward_info": reward, "mujoco_qpos": self.mujoco_qpos, "mujoco_qvel": self.mujoco_qvel}
-        return ob, reward, done, info
+        # truncation=False as the time limit is handled by the `TimeLimit` wrapper added during `make`
+        return ob, reward, done, False, info
 
     def clip_action(self, action: np.ndarray, a_min=-1.0, a_max=1.0) -> np.ndarray:
         """Clip policy action vector to be within given minimum and maximum limits.
@@ -322,7 +358,7 @@ class UAVBaseEnv(mujoco_env.MujocoEnv, utils.EzPickle, ABC):
         Returns:
             numpy.ndarray: Inertia matrix of the system.
         """
-        return np.array(self.sim.data.cinert)
+        return np.array(self.data.cinert)
 
     def get_motor_input(self, action):
         raise NotImplementedError
@@ -334,8 +370,8 @@ class UAVBaseEnv(mujoco_env.MujocoEnv, utils.EzPickle, ABC):
             numpy.ndarray: Vector containing concatenation of qpos and qvel from mujoco
 
         """
-        qpos = self.sim.data.qpos.copy()
-        qvel = self.sim.data.qvel.copy()
+        qpos = self.data.qpos.copy()
+        qvel = self.data.qvel.copy()
 
         self.mujoco_qpos = np.array(qpos)
         self.mujoco_qvel = np.array(qvel)
@@ -355,8 +391,8 @@ class UAVBaseEnv(mujoco_env.MujocoEnv, utils.EzPickle, ABC):
                 - qvel (numpy.ndarray): True velocity vector from the simulator.
 
         """
-        qpos = self.data.get_joint_qpos(joint_name).copy()
-        qvel = self.data.get_joint_qvel(joint_name).copy()
+        qpos = self.data.qpos.copy()
+        qvel = self.data.qpos.copy()
         return qpos, qvel
 
     def print_info(self) -> None:

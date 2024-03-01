@@ -14,8 +14,8 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
         frame_skip (int): Number of frames to skip before application of next action command to the environment from the control policy.
     """
 
-    def __init__(self, xml_name="quadrotor_plus.xml", frame_skip=5, env_bounding_box=1.2, randomize_reset=False):
-        super().__init__(xml_name=xml_name, frame_skip=frame_skip, env_bounding_box=env_bounding_box, randomize_reset=randomize_reset)
+    def __init__(self, xml_name="quadrotor_plus.xml", frame_skip=5, env_bounding_box=1.2, randomize_reset=False, **kwargs):
+        super().__init__(xml_name=xml_name, frame_skip=frame_skip, env_bounding_box=env_bounding_box, randomize_reset=randomize_reset, **kwargs)
 
     @property
     def hover_force(self):
@@ -61,7 +61,6 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
         action_mujoco = self.get_motor_input(a)
         xyz_position_before = self.get_body_com("core")[:3].copy()
         self.do_simulation(action_mujoco, self.frame_skip)
-        self.sim.forward()
         xyz_position_after = self.get_body_com("core")[:3].copy()
 
         xyz_velocity = (xyz_position_after - xyz_position_before) / self.dt
@@ -82,7 +81,8 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
         done = self.is_done(ob)
         if self.observation_noise_std:
             ob += self.np_random.uniform(low=-self.observation_noise_std, high=self.observation_noise_std, size=ob.shape)
-        return ob, reward, done, info
+        # truncation=False as the time limit is handled by the `TimeLimit` wrapper added during `make`
+        return ob, reward, done, False, info
 
     def _get_obs(self):
         """
@@ -92,8 +92,8 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
             numpy.ndarray: 18-dim numpy array of states of environment consisting of (err_x, err_y, err_z, rot_mat(3, 3), vx, vy, vz, body_rate_x, body_rate_y, body_rate_z)
         """
 
-        qpos = self.sim.data.qpos.copy()
-        qvel = self.sim.data.qvel.copy()
+        qpos = self.data.qpos.copy()
+        qvel = self.data.qvel.copy()
         qpos[:3] = self.get_body_com("core")[:3].copy()
 
         self.mujoco_qpos = np.array(qpos)
@@ -107,11 +107,11 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
         quat = np.array(qpos[3:7])
         self.current_quat = np.array(quat)
         rot_mat = utils.quat2rot(quat)                          # rotation matrix
-        vel = np.array(self.sim.data.get_joint_qvel("root")[:3])
+        vel = np.array(self.data.qvel[:3])
 
-        # angular_vel = np.array(self.sim.data.get_body_xvelr("core"))
+        # angular_vel = np.array(self.data.get_body_xvelr("core"))
 
-        angular_vel = np.array(self.sim.data.get_joint_qvel("root")[3:6])     # angular velocity of core of the robot in body frame.
+        angular_vel = np.array(self.data.qvel[3:6])     # angular velocity of core of the robot in body frame.
 
         return np.concatenate([e_pos, rot_mat.flatten(), vel, angular_vel]).flatten()
 
@@ -133,7 +133,7 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
 
         reward_position = self.norm(ob[0:3]) * (-self.position_reward_constant)
 
-        reward_orientation = self.orientation_error(self.sim.data.qpos[3:7]) * (-self.orientation_reward_constant)
+        reward_orientation = self.orientation_error(self.data.qpos[3:7]) * (-self.orientation_reward_constant)
 
         reward_linear_velocity = self.norm(ob[12:15]) * (-self.linear_velocity_reward_constant)
 
