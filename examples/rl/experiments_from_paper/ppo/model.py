@@ -28,8 +28,8 @@ class Policy(nn.Module):
     Control policy to train using Reinforcement Learning.
 
     Args:
-        obs_shape (tuple): Observation dimensions from Gym environment as tuple of integers.
-        action_space (gym.Env.action_space): Action space object from Gym environment.
+        obs_shape (tuple): Observation dimensions from gymnasium environment as tuple of integers.
+        action_space (gym.Env.action_space): Action space object from gymnasium environment.
         base (nn.Module): Network base architecture object. Default is ``None``.
         base_kwargs: Network architecture details.
 

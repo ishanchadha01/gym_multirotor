@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import gym_multirotor
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env

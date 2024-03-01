@@ -4,7 +4,7 @@ Use terminal to run this code.
 python play_multirotor.py
 """
 
-import gym
+import gymnasium as gym
 import numpy as np
 import gym_multirotor
 

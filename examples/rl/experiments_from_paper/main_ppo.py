@@ -31,7 +31,7 @@ from ppo.envs import make_vec_envs
 from ppo.model import Policy
 from ppo.storage import RolloutStorage
 from ppo.evaluation import evaluate
-import gym
+import gymnasium as gym
 import gym_multirotor
 
 

@@ -12,7 +12,8 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas
-from gym.core import Wrapper
+import gymnasium as gym
+from gymnasium.core import Wrapper
 
 
 def read_json(fname):

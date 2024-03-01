@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import gym_multirotor
 from stable_baselines3 import PPO
 

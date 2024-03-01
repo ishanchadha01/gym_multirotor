@@ -1,4 +1,5 @@
-from gym.envs.registration import register
+import gymnasium as gym
+from gymnasium.envs.registration import register
 from gym_multirotor import envs
 from gym_multirotor.envs import mujoco
 from gym_multirotor.envs.mujoco import *

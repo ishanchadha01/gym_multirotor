@@ -41,9 +41,10 @@ import math
 from abc import ABC
 from typing import Tuple, Dict
 import numpy as np
-from gym import spaces
-from gym import utils
-from gym.envs.mujoco import mujoco_env
+import gymnasium as gym
+from gymnasium import spaces
+from gymnasium import utils
+from gymnasium.envs.mujoco import mujoco_env
 from gym_multirotor import utils as multirotor_utils
 
 
