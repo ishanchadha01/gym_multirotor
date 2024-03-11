@@ -7,6 +7,12 @@ Quadrotor  |  Tiltrotor
 <img src="media/quadrotor-babbling.gif" width="300" height="300"/> | <img src="media/tiltrotor-babbling.gif" width="300" height="300"/>
 
 ## Requirements
+* Updated testing: `python=3.10` on OSX Monterey
+* `conda create -n multirotor_gym python=3.10`, `python -m pip install -r requirements.txt`, `python -m pip install -e .`
+* Check issues for current bugs
+
+
+
 * This package has been tested on Ubuntu 18.04/20.04 with `python 3.8`.
 * To install MuJoCo binaries refer [this](https://github.com/openai/mujoco-py#install-mujoco).
 * Few additional packages:
