@@ -3,7 +3,7 @@ import gym_multirotor
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 
-ENV_NAME = "QuadrotorXHoverEnv-v0"
+ENV_NAME = "QuadrotorPlusHoverEnv-v0"
 
 # Parallel environments
 vec_env = make_vec_env(ENV_NAME, n_envs=4)
