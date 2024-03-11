@@ -7,6 +7,7 @@ python play_multirotor.py
 import gymnasium as gym
 import numpy as np
 import gym_multirotor
+import time
 
 
 def main(env):
@@ -41,14 +42,15 @@ def main(env):
             env.render()
 
         # action = np.array([0, 0, 0, 0])
-        action = env.action_space.sample()
+        action = env.action_space.sample() # this samples random action, we want ppo
 
         ob, reward, terminated, truncated, info = env.step(action)
 
         if done:
             ob, info = env.reset()
-        print(info)
-        print(ob)
+        # print(info)
+        # print(ob)
+        time.sleep(1.0)
 
     env.close()
 

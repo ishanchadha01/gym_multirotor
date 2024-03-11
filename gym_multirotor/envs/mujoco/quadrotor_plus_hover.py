@@ -17,6 +17,9 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
     def __init__(self, xml_name="quadrotor_plus.xml", frame_skip=5, env_bounding_box=1.2, randomize_reset=False, **kwargs):
         super().__init__(xml_name=xml_name, frame_skip=frame_skip, env_bounding_box=env_bounding_box, randomize_reset=randomize_reset, **kwargs)
 
+    def print_info(self) -> None:
+        return super().print_info()
+
     @property
     def hover_force(self):
         """

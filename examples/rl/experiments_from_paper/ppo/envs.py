@@ -4,13 +4,14 @@ import gymnasium as gym
 import numpy as np
 import torch
 from gymnasium.spaces.box import Box
-from gymnasium.wrappers.clip_action import ClipAction
-from stable_baselines3.common.atari_wrappers import (ClipRewardEnv,
-                                                     EpisodicLifeEnv,
-                                                     FireResetEnv,
-                                                     MaxAndSkipEnv,
-                                                     NoopResetEnv, WarpFrame)
-from stable_baselines3.common.monitor import Monitor
+from gymnasium.wrappers import ClipAction, RecordEpisodeStatistics
+# from stable_baselines3.common.atari_wrappers import (ClipRewardEnv,
+#                                                      EpisodicLifeEnv,
+#                                                      FireResetEnv,
+#                                                      MaxAndSkipEnv,
+#                                                      NoopResetEnv, WarpFrame)
+# from stable_baselines3.common.monitor import Monitor # TODO: need to hardcode log saving since this is outdated, just recording stats for now
+
 from stable_baselines3.common.vec_env import (DummyVecEnv, SubprocVecEnv,
                                               VecEnvWrapper)
 from stable_baselines3.common.vec_env.vec_normalize import \
@@ -34,41 +35,20 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, allow_early_resets):
     def _thunk():
-        if env_id.startswith("dm"):
-            _, domain, task = env_id.split('.')
-            env = dmc2gym.make(domain_name=domain, task_name=task)
-            env = ClipAction(env)
-        else:
-            env = gym.make(env_id)
+        print(f'env id {env_id}')
+        env = gym.make(env_id)
+        env.print_info()
 
-        is_atari = hasattr(gym.envs, 'atari') and isinstance(
-            env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
-        if is_atari:
-            env = NoopResetEnv(env, noop_max=30)
-            env = MaxAndSkipEnv(env, skip=4)
-
-        env.seed(seed + rank)
+        env.reset(seed=seed + rank) # seed is sum of seed arg and id of current proc
 
         if str(env.__class__.__name__).find('TimeLimit') >= 0:
             env = TimeLimitMask(env)
 
         if log_dir is not None:
-            env = Monitor(env,
-                          os.path.join(log_dir, str(rank)),
-                          allow_early_resets=allow_early_resets)
-
-        if is_atari:
-            if len(env.observation_space.shape) == 3:
-                env = EpisodicLifeEnv(env)
-                if "FIRE" in env.unwrapped.get_action_meanings():
-                    env = FireResetEnv(env)
-                env = WarpFrame(env, width=84, height=84)
-                env = ClipRewardEnv(env)
-        elif len(env.observation_space.shape) == 3:
-            raise NotImplementedError(
-                "CNN models work only for atari,\n"
-                "please use a custom wrapper for a custom pixel input env.\n"
-                "See wrap_deepmind for an example.")
+            # env = Monitor(env,
+            #               os.path.join(log_dir, str(rank)),
+            #               allow_early_resets=allow_early_resets)
+            env = RecordEpisodeStatistics(env)
 
         # If the input has shape (W,H,3), wrap for PyTorch convolutions
         obs_shape = env.observation_space.shape
@@ -96,6 +76,7 @@ def make_vec_envs(env_name,
     if len(envs) > 1:
         envs = SubprocVecEnv(envs)
     else:
+        print(envs[0]().observation_space)
         envs = DummyVecEnv(envs)
 
     if len(envs.observation_space.shape) == 1:
