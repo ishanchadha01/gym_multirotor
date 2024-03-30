@@ -138,3 +138,6 @@ MUJOCO_LOG.TXT
 examples/rl/experiments_from_paper/run_all_TiltrotorPlus8DofHoverEnv_v0.yaml
 examples/rl/experiments_from_paper/run_all_TiltrotorPlus8DofHoverEnv_v0_developmental.yaml
 examples/rl/experiments_from_paper/run_all_QuadrotorPlusHoverEnv_v0.yaml
+
+# PPO models
+*.zip

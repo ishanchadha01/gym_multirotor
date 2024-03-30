@@ -248,7 +248,7 @@ class UAVBaseEnv(MujocoEnv, utils.EzPickle, ABC):
         self.gravity_mag = 9.81     # default value of acceleration due to gravity
 
         observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(111,), dtype=np.float64
+            low=-np.inf, high=np.inf, shape=(18,), dtype=np.float64
         )
 
         utils.EzPickle.__init__(self,
