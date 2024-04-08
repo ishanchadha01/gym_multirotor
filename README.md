@@ -7,7 +7,7 @@ Quadrotor  |  Tiltrotor
 <img src="media/quadrotor-babbling.gif" width="300" height="300"/> | <img src="media/tiltrotor-babbling.gif" width="300" height="300"/>
 
 ## Requirements
-* This package has been tested on Ubuntu 18.04/20.04 with `python 3.8`.
+* This package has been tested on Ubuntu 18.04/20.04 with `python 3.11.8`.
 * To install MuJoCo binaries refer [this](https://github.com/openai/mujoco-py#install-mujoco).
 * Few additional packages:
   ```
