@@ -45,7 +45,7 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
         result_force = (xyz*force_gradient)*linear_vel**2 
 
         force_in_body = Rot_Mat@result_force
-
+        # returns body z force on the vehicle to be in line with the hover force of the vehicle, incredibly simplified dynamics but works in env for now
         return force_in_body[2]/4
 
 
