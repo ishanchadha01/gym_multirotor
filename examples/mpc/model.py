@@ -1,24 +1,43 @@
 import torch
 import torch.nn as nn
 from torch.distributions import Normal
+import torch.nn.functional as F
 
 from gym_multirotor.sb3.common.policies import ActorCriticPolicy
 
 
 class NeuralCostMap(nn.Module):
-    def __init__(self, state_dim, action_dim, horizon):
+    # outputs of cost map are diagonal entries of Q and P with both state and control included
+    def __init__(self, obs_len, state_dim, control_dim, horizon):
         super().__init__()
-        self.horizon = horizon
+        self.input_size = obs_len
+        self.output_size = 2 * (state_dim + control_dim)
         self.network = nn.Sequential(
-            nn.Linear(state_dim, 512),
+            nn.Linear(self.input_size, 512),
             nn.ReLU(),
             nn.Linear(512, 512),
             nn.ReLU(),
-            nn.Linear(512, horizon * (state_dim + action_dim) * 2)
+            nn.Linear(512, self.output_size),
+            F.sigmoid()
         )
 
-    def forward(self, state):
-        return self.network(state).split(self.horizon, dim=1)
+    def forward(self, state, input):
+        x = torch.cat((state, input), dim=-1)
+        return self.network(x)
+    
+    
+class Critic(nn.Module):
+    def __init__(self, obs_len):
+        super().__init__()
+        self.input_size = obs_len
+        self.output_size = 1
+        self.network = nn.Sequential(
+            nn.Linear(self.input_size, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, self.output_size),
+        )
 
 
 #TODO: implement differentiable mpc
