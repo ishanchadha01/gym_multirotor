@@ -15,7 +15,7 @@ def main_old():
     # env = gym.make("Ant-v4", render_mode="human")
     # env = gym.make("LunarLander-v2",render_mode="human")
     # env = gym.make('TiltrotorPlus8DofHoverEnv-v0')
-    render = True
+    render = False
     # env_ = env.env.env.env
     # # ----- Environment Info ------------------------
     # obs_dimensions = env.observation_space.shape[0]
@@ -40,7 +40,6 @@ def main_old():
     done = False
     if render:
         env.render()
-
     for t in range(10000):
         if render:
             env.render()
@@ -60,7 +59,6 @@ def main_old():
 
 def main():
     vec_env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=4)
-
     model = PPO("MlpPolicy", vec_env, verbose=1)
     model.learn(total_timesteps=25000)
     model.save("quadplus")
@@ -68,7 +66,6 @@ def main():
     del model # remove to demonstrate saving and loading
 
     model = PPO.load("quadplus")
-
     obs = vec_env.reset()
     while True:
         action, _states = model.predict(obs)
@@ -77,7 +74,7 @@ def main():
 
 
 if __name__ == "__main__":
-    # main_old()
+    #main_old()
     main()
 
     

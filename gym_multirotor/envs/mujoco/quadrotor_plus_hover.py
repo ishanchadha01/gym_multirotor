@@ -27,6 +27,28 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
         """
         return self.mass * self.gravity_mag * 0.25
 
+    @property
+    def wind_force(self):
+        """
+        Wiud force for each actuators in quadcopter.
+
+        Assumes wind force = <.5*x, .25y>, independent of z
+
+        Returns:
+            float: Wind force on body split for each rotor.
+        """
+        xyz = self.get_body_com("core")[:3].copy()
+        uvw  = self._get_obs()[12:15].copy()
+        Rot_Mat = self._get_obs()[3:12].copy().reshape(3,3)
+        linear_vel = np.linalg.norm(uvw)
+        force_gradient = np.array([.5, .25, 0])
+        result_force = (xyz*force_gradient)*linear_vel**2 
+
+        force_in_body = Rot_Mat@result_force
+        # returns body z force on the vehicle to be in line with the hover force of the vehicle, incredibly simplified dynamics but works in env for now
+        return force_in_body[2]/4
+
+
     def get_motor_input(self, action):
         """
         Transform policy actions to motor inputs.
@@ -38,7 +60,7 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
             numpy.ndarray: Vector of motor inputs of shape (4,).
         """
         motor_range = 2.0
-        motor_inputs = self.hover_force + action * motor_range / (self.policy_range[1] - self.policy_range[0])
+        motor_inputs = self.hover_force + self.wind_force + action * motor_range / (self.policy_range[1] - self.policy_range[0])
         return motor_inputs
 
     def step(self, action):
