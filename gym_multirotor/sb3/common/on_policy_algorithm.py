@@ -98,6 +98,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             supported_action_spaces=supported_action_spaces,
         )
 
+        self.log_outputs = {}
+
         self.n_steps = n_steps
         self.gamma = gamma
         self.gae_lambda = gae_lambda
@@ -295,6 +297,18 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
                 self.logger.dump(step=self.num_timesteps)
+
+                if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
+                    self.log_outputs.update({
+                        "rollout/ep_rew_mean": safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]),
+                        "rollout/ep_len_mean": safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]),
+                    })
+                self.log_outputs.update({
+                    "time/iterations":iteration,
+                    "time/time_elapsed": int(time_elapsed),
+                    "time/total_timesteps": self.num_timesteps,
+                })
+                
 
             self.train()
 

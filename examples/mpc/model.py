@@ -4,6 +4,8 @@ from torch.distributions import Normal
 import torch.nn.functional as F
 
 from gym_multirotor.sb3.common.policies import ActorCriticPolicy
+from gym_multirotor.sb3 import PPO
+from gym_multirotor.sb3.common.env_util import make_vec_env
 
 
 class NeuralCostMap(nn.Module):
@@ -25,7 +27,7 @@ class NeuralCostMap(nn.Module):
         x = torch.cat((state, input), dim=-1)
         return self.network(x)
     
-    
+
 class Critic(nn.Module):
     def __init__(self, obs_len):
         super().__init__()
@@ -54,32 +56,43 @@ class DifferentiableMPC:
         return torch.rand(state.size(0), self.action_dim), torch.rand(state.size(0), 1)  # Dummy action and cost
 
 
-class ACMPCPolicy(ActorCriticPolicy):
-    def __init__(self, observation_space, action_space, horizon=10):
-        super().__init__(observation_space, action_space)
-        state_dim = observation_space.shape[0]
-        action_dim = action_space.shape[0]
 
-        self.cost_map = NeuralCostMap(state_dim, action_dim, horizon)
-        self.mpc = DifferentiableMPC(state_dim, action_dim, horizon)
 
-    def _predict(self, observation, deterministic=False):
-        cost_params = self.cost_map(observation)
-        action, _ = self.mpc.forward(observation, cost_params)
-        return action
 
-    #TODO: evaluate actions
-    def evaluate_actions(self, obs, actions):
-        # Here you would include the logic to evaluate actions using the MPC and the neural cost map
-        # For simplicity, we just call the super method
-        return super().evaluate_actions(obs, actions)
+class ACMPC():
+    def __init__(self, obs_len, state_dim, control_dim):
+        # Actor, policy, neural cost map
+        value_input_size = obs_len
+        value_output_size = 2 * (state_dim + control_dim)
+        neural_cost_map = nn.Sequential(
+            nn.Linear(self.input_size, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, self.output_size),
+            F.sigmoid(),
+            DifferentiableMPC()
+        )
 
-# Usage
-observation_space = torch.randn(10)  # Dummy observation space
-action_space = torch.randn(2)  # Dummy action space
+        # Critic, value
+        critic_input_size = obs_len
+        critic_output_size = 1
+        critic = nn.Sequential(
+            nn.Linear(critic_input_size, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, critic_output_size),
+        )
 
-ac_mpc_policy = ACMPCPolicy(observation_space, action_space)
+        actor_critic = PPO(
+            policy=ActorCriticPolicy,
+            env=make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=4), 
+            verbose=1,
+            policy_kwargs = {
+                'model_arch': [neural_cost_map, critic]
+            },
+            seed=0
+        )
 
-# Example forward pass
-obs = torch.randn(1, 10)  # Dummy observation
-action = ac_mpc_policy._predict(obs)
+        diff_mpc = DifferentiableMPC()

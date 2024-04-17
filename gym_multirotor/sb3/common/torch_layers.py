@@ -175,6 +175,19 @@ class MlpExtractor(nn.Module):
 
     def __init__(
         self,
+        pi: Type[nn.Module],
+        vf: Type[nn.Module],
+        device: Union[th.device, str] = "auto",
+    ):
+        super.__init__()
+        # Create networks
+        self.policy_net = pi.to(device)
+        self.value_net = vf.to(device)
+        self.latent_dim_pi = self.policy_net[-1].out_features
+        self.latent_dim_vf = self.value_net[-1].out_features
+
+    def __init__(
+        self,
         feature_dim: int,
         net_arch: Union[List[int], Dict[str, List[int]]],
         activation_fn: Type[nn.Module],

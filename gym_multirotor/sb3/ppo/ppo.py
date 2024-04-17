@@ -134,6 +134,9 @@ class PPO(OnPolicyAlgorithm):
                 spaces.MultiBinary,
             ),
         )
+        # For later analysis
+        if not self.log_outputs:
+            self.log_outputs = {}
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN
         # because of the advantage normalization
@@ -302,6 +305,18 @@ class PPO(OnPolicyAlgorithm):
         self.logger.record("train/clip_range", clip_range)
         if self.clip_range_vf is not None:
             self.logger.record("train/clip_range_vf", clip_range_vf)
+        
+        self.log_outputs.update({
+            "train/entropy_loss": np.mean(entropy_losses),
+            "train/policy_gradient_loss": np.mean(pg_losses),
+            "train/value_loss": np.mean(value_losses),
+            "train/approx_kl": np.mean(approx_kl_divs),
+            "train/clip_fraction": np.mean(clip_fractions),
+            "train/loss": loss.item(),
+            "train/explained_variance": explained_var,
+            "train/n_updates": self._n_updates,
+            "train/clip_range": clip_range,
+        })
 
     def learn(
         self: SelfPPO,

@@ -41,7 +41,7 @@ class QuadrotorPlusHoverEnv(UAVBaseEnv):
         uvw  = self._get_obs()[12:15].copy()
         Rot_Mat = self._get_obs()[3:12].copy().reshape(3,3)
         linear_vel = np.linalg.norm(uvw)
-        force_gradient = np.array([.5, .25, 0])
+        force_gradient = np.array([0, 0, 0])
         result_force = (xyz*force_gradient)*linear_vel**2 
 
         force_in_body = Rot_Mat@result_force

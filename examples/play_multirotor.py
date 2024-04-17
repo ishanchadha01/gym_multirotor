@@ -9,6 +9,7 @@ import numpy as np
 from gym_multirotor.sb3 import PPO
 from gym_multirotor.sb3.common.env_util import make_vec_env
 
+import json
 
 def main_old():
     env = gym.make('QuadrotorPlusHoverEnv-v0', render_mode='human')
@@ -56,21 +57,58 @@ def main_old():
 
     env.close()
 
+import cv2
+def create_video(imgs, output_path, fps=10):
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+
+    # Assume all images are the same size, read the first image to get the size
+    test_img = imgs[0]
+    size = (test_img.shape[1], test_img.shape[0])
+    out = cv2.VideoWriter(output_path, fourcc, fps, size)
+
+    # Read each image and write it to the video
+    for img in imgs:
+        out.write(img)
+
+    # Release everything when job is finished
+    out.release()
+
 
 def main():
     vec_env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=4)
     model = PPO("MlpPolicy", vec_env, verbose=1)
-    model.learn(total_timesteps=25000)
-    model.save("quadplus")
+    fp = "ppo_output_nowind.json"
+    data = []
+    for i in range(100):
+        model.learn(total_timesteps=1e5, log_interval=1)
+        model.save("quadplus_ppo_nowind")
+        obs = vec_env.reset()
+        
+        # write to json file
+        print(model.log_outputs)
+        iter_data = {key: float(value) for key, value in model.log_outputs.items()}
+        data.append(iter_data)
+        with open(fp, 'w') as f:
+            json.dump(data, f, indent=4)
 
-    del model # remove to demonstrate saving and loading
+        imgs = []
+        for j in range(100):
+            action, _states = model.predict(obs)
+            obs, rewards, dones, info = vec_env.step(action)
+            bigimg = vec_env.render("rgb_array")
+            imgs.append(bigimg[:,:,::-1])
+        create_video(imgs, f"ppo_nowind_vids/vid_{i:04d}.mp4", fps=24)
+    f.close()
 
-    model = PPO.load("quadplus")
-    obs = vec_env.reset()
-    while True:
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = vec_env.step(action)
-        vec_env.render("human")
+    # del model # remove to demonstrate saving and loading
+
+    # model = PPO.load("quadplus")
+    # obs = vec_env.reset()
+    # while True:
+    #     action, _states = model.predict(obs)
+    #     obs, rewards, dones, info = vec_env.step(action)
+    #     vec_env.render("human")
 
 
 if __name__ == "__main__":

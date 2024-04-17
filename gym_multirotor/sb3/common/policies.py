@@ -420,6 +420,7 @@ class ActorCriticPolicy(BasePolicy):
     :param action_space: Action space
     :param lr_schedule: Learning rate schedule (could be constant)
     :param net_arch: The specification of the policy and value networks.
+    :param model_arch: Directly give models instead of network archs as list like net_arch.
     :param activation_fn: Activation function
     :param ortho_init: Whether to use or not orthogonal initialization
     :param use_sde: Whether to use State Dependent Exploration or not
@@ -449,6 +450,7 @@ class ActorCriticPolicy(BasePolicy):
         action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
+        model_arch: List[Type[nn.Sequential]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -580,6 +582,19 @@ class ActorCriticPolicy(BasePolicy):
             device=self.device,
         )
 
+    def _build_mlp_module(self) -> None:
+        """
+        Create the policy and value networks.
+        Part of the layers can be shared.
+        """
+        # Note: If net_arch is None and some features extractor is used,
+        #       net_arch here is an empty list and mlp_extractor does not
+        #       really contain any layers (acts like an identity module).
+        self.mlp_extractor = MlpExtractor(
+            self.model_arch[0],
+            self.model_arch[1]
+        )
+
     def _build(self, lr_schedule: Schedule) -> None:
         """
         Create the networks and the optimizer.
@@ -587,7 +602,11 @@ class ActorCriticPolicy(BasePolicy):
         :param lr_schedule: Learning rate schedule
             lr_schedule(1) is the initial learning rate
         """
-        self._build_mlp_extractor()
+        # If torch modules passed in, don't build using MLPExtractor
+        if isinstance(self.net_arch[0], nn.Module):
+            self._build_mlp_module()
+        else:
+            self._build_mlp_extractor()
 
         latent_dim_pi = self.mlp_extractor.latent_dim_pi
 
