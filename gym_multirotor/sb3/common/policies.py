@@ -671,6 +671,8 @@ class ActorCriticPolicy(BasePolicy):
         distribution = self._get_action_dist_from_latent(latent_pi)
         actions = distribution.get_actions(deterministic=deterministic)
         log_prob = distribution.log_prob(actions)
+        if log_prob.ndimension() > 1:
+            log_prob = log_prob[0]
         actions = actions.reshape((-1, *self.action_space.shape))  # type: ignore[misc]
         return actions, values, log_prob
 
@@ -751,8 +753,14 @@ class ActorCriticPolicy(BasePolicy):
             pi_features, vf_features = features
             latent_pi = self.mlp_extractor.forward_actor(pi_features, obs)
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
+
+        if latent_pi.ndimension() > 2:
+            latent_pi = latent_pi[0] # after DiffMPC, there is extra dim for horizon at the beginning
+
         distribution = self._get_action_dist_from_latent(latent_pi)
         log_prob = distribution.log_prob(actions)
+        if log_prob.ndimension() > 1:
+            log_prob = log_prob[0]
         values = self.value_net(latent_vf)
         entropy = distribution.entropy()
         return values, log_prob, entropy

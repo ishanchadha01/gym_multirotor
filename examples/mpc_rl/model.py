@@ -131,7 +131,7 @@ class ACMPC():
                 'model_arch': [actor, critic]
             },
             seed=0,
-            n_steps=64 # 2048 rollout len by default, but this takes too long for MPC with LQR solver
+            n_steps=32 # 2048 rollout len by default, but this takes too long for MPC with LQR solver
         )
         print("Created ACMPC model")
     
@@ -140,21 +140,20 @@ class ACMPC():
         data = []
         for i in range(100):
             self.actor_critic.learn(total_timesteps=10, log_interval=1)
-            self.actor_critic.save("quadplus_mpc_nowind")
-            obs = self.reset()
+            # self.actor_critic.save("quadplus_mpc_nowind")
+            # obs = self.actor_critic.reset()
             
-            # write to json file
-            print(self.actor_critic.log_outputs)
-            iter_data = {key: float(value) for key, value in self.actor_critic.log_outputs.items()}
-            data.append(iter_data)
-            with open(fp, 'w') as f:
-                json.dump(data, f, indent=4)
+            # # write to json file
+            # print(self.actor_critic.log_outputs)
+            # iter_data = {key: float(value) for key, value in self.actor_critic.log_outputs.items()}
+            # data.append(iter_data)
+            # with open(fp, 'w') as f:
+            #     json.dump(data, f, indent=4)
 
-            imgs = []
-            for j in range(100):
-                action, _states = self.actor_critic.predict(obs)
-                obs, rewards, dones, info = self.env.step(action)
-                bigimg = self.env.render("rgb_array")
-                imgs.append(bigimg[:,:,::-1])
-            create_video(imgs, f"mpc_nowind_vids/vid_{i:04d}.mp4", fps=24)
-        f.close()
+            # imgs = []
+            # for j in range(100):
+            #     action, _states = self.actor_critic.predict(obs)
+            #     obs, rewards, dones, info = self.env.step(action)
+            #     bigimg = self.env.render("rgb_array")
+            #     imgs.append(bigimg[:,:,::-1])
+            # create_video(imgs, f"mpc_nowind_vids/vid_{i:04d}.mp4", fps=24)

@@ -118,7 +118,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main_ppo_nowind()
+    main_mpc_nowind()
 
     # state is qpos, qvel, can get with super()._get_obs() or self.mujoco_qpos/qvel
     # action is ..., same as control input
