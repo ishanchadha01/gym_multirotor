@@ -9,7 +9,10 @@ import numpy as np
 from gym_multirotor.sb3 import PPO
 from gym_multirotor.sb3.common.env_util import make_vec_env
 
+import cv2
 import json
+
+from mpc_rl.model import ACMPC
 
 def main_old():
     env = gym.make('QuadrotorPlusHoverEnv-v0', render_mode='human')
@@ -57,7 +60,7 @@ def main_old():
 
     env.close()
 
-import cv2
+
 def create_video(imgs, output_path, fps=10):
     # Define the codec and create VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
@@ -75,7 +78,7 @@ def create_video(imgs, output_path, fps=10):
     out.release()
 
 
-def main():
+def main_ppo_nowind():
     vec_env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=4)
     model = PPO("MlpPolicy", vec_env, verbose=1)
     fp = "ppo_output_nowind.json"
@@ -101,19 +104,26 @@ def main():
         create_video(imgs, f"ppo_nowind_vids/vid_{i:04d}.mp4", fps=24)
     f.close()
 
-    # del model # remove to demonstrate saving and loading
 
-    # model = PPO.load("quadplus")
-    # obs = vec_env.reset()
-    # while True:
-    #     action, _states = model.predict(obs)
-    #     obs, rewards, dones, info = vec_env.step(action)
-    #     vec_env.render("human")
+def main_mpc_nowind():
+    obs_len = 18 # 18-dim numpy array of states of environment consisting of (err_x, err_y, err_z, rot_mat(3, 3), vx, vy, vz, body_rate_x, body_rate_y, body_rate_z)
+    state_dim = obs_len
+    control_dim = 4 # one for each actuator
+    model = ACMPC(obs_len=obs_len, state_dim=state_dim, control_dim=control_dim)
+    model.train()
+    
+
+def main():
+    pass
 
 
 if __name__ == "__main__":
-    #main_old()
-    main()
+    main_mpc_nowind()
+
+    # state is qpos, qvel, can get with super()._get_obs() or self.mujoco_qpos/qvel
+    # action is ..., same as control input
+    # obs is 18 dim array consisting of more values like motion error, rotation, etc
+
 
     
     
