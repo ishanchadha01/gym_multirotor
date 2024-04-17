@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Type, Union
+from typing import Dict, List, Tuple, Type, Union, Any
 
 import gymnasium as gym
 import torch as th
@@ -6,7 +6,7 @@ from gymnasium import spaces
 from torch import nn
 
 from gym_multirotor.sb3.common.preprocessing import get_flattened_obs_dim, is_image_space
-from gym_multirotor.sb3.common.type_aliases import TensorDict
+from gym_multirotor.sb3.common.type_aliases import TensorDict, PyTorchObs
 from gym_multirotor.sb3.common.utils import get_device
 
 
@@ -175,26 +175,25 @@ class MlpExtractor(nn.Module):
 
     def __init__(
         self,
-        pi: Type[nn.Module],
-        vf: Type[nn.Module],
+        feature_dim: int = 0,
+        net_arch: Union[List[int], Dict[str, List[int]]] = [64, 64],
+        activation_fn: Type[nn.Module] = nn.ReLU(),
         device: Union[th.device, str] = "auto",
-    ):
-        super.__init__()
-        # Create networks
-        self.policy_net = pi.to(device)
-        self.value_net = vf.to(device)
-        self.latent_dim_pi = self.policy_net[-1].out_features
-        self.latent_dim_vf = self.value_net[-1].out_features
-
-    def __init__(
-        self,
-        feature_dim: int,
-        net_arch: Union[List[int], Dict[str, List[int]]],
-        activation_fn: Type[nn.Module],
-        device: Union[th.device, str] = "auto",
+        model_arch: List[nn.Module] = []
     ) -> None:
         super().__init__()
         device = get_device(device)
+
+        if len(model_arch) == 2:
+            # Create networks
+            pi, vf = model_arch
+            self.policy_net = pi.to(device)
+            self.value_net = vf.to(device)
+            self.latent_dim_pi = self.policy_net.out_size
+            self.latent_dim_vf = self.value_net.out_size
+            self.use_obs = True
+            return
+
         policy_net: List[nn.Module] = []
         value_net: List[nn.Module] = []
         last_layer_dim_pi = feature_dim
@@ -227,15 +226,22 @@ class MlpExtractor(nn.Module):
         self.policy_net = nn.Sequential(*policy_net).to(device)
         self.value_net = nn.Sequential(*value_net).to(device)
 
-    def forward(self, features: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+        # To distinguish that this is not for ACMPC
+        self.use_obs = False
+
+    def forward(self, features: th.Tensor, obs: PyTorchObs) -> Tuple[th.Tensor, th.Tensor]:
         """
         :return: latent_policy, latent_value of the specified network.
             If all layers are shared, then ``latent_policy == latent_value``
         """
+        if self.use_obs:
+            return self.forward_actor(features, obs), self.forward_critic(features)
         return self.forward_actor(features), self.forward_critic(features)
 
-    def forward_actor(self, features: th.Tensor) -> th.Tensor:
-        return self.policy_net(features)
+    def forward_actor(self, features: th.Tensor, obs: PyTorchObs = None) -> th.Tensor:
+        if not self.use_obs:
+            return self.policy_net(features)
+        return self.policy_net(features, obs)
 
     def forward_critic(self, features: th.Tensor) -> th.Tensor:
         return self.value_net(features)

@@ -169,7 +169,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_start()
 
+        print("Collecting rollouts")
         while n_steps < n_rollout_steps:
+            print(f"Rollout {n_steps} / {n_rollout_steps}")
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
                 self.policy.reset_noise(env.num_envs)
@@ -270,6 +272,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             tb_log_name,
             progress_bar,
         )
+        print("Learning setup complete")
 
         callback.on_training_start(locals(), globals())
 

@@ -84,24 +84,24 @@ def main_ppo_nowind():
     fp = "ppo_output_nowind.json"
     data = []
     for i in range(100):
-        model.learn(total_timesteps=1e5, log_interval=1)
-        model.save("quadplus_ppo_nowind")
-        obs = vec_env.reset()
+        model.learn(total_timesteps=1, log_interval=1)
+        # model.save("quadplus_ppo_nowind")
+        # obs = vec_env.reset()
         
-        # write to json file
-        print(model.log_outputs)
-        iter_data = {key: float(value) for key, value in model.log_outputs.items()}
-        data.append(iter_data)
-        with open(fp, 'w') as f:
-            json.dump(data, f, indent=4)
+        # # write to json file
+        # print(model.log_outputs)
+        # iter_data = {key: float(value) for key, value in model.log_outputs.items()}
+        # data.append(iter_data)
+        # with open(fp, 'w') as f:
+        #     json.dump(data, f, indent=4)
 
-        imgs = []
-        for j in range(100):
-            action, _states = model.predict(obs)
-            obs, rewards, dones, info = vec_env.step(action)
-            bigimg = vec_env.render("rgb_array")
-            imgs.append(bigimg[:,:,::-1])
-        create_video(imgs, f"ppo_nowind_vids/vid_{i:04d}.mp4", fps=24)
+        # imgs = []
+        # for j in range(100):
+        #     action, _states = model.predict(obs)
+        #     obs, rewards, dones, info = vec_env.step(action)
+        #     bigimg = vec_env.render("rgb_array")
+        #     imgs.append(bigimg[:,:,::-1])
+        # create_video(imgs, f"ppo_nowind_vids/vid_{i:04d}.mp4", fps=24)
     f.close()
 
 
@@ -118,7 +118,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main_mpc_nowind()
+    main_ppo_nowind()
 
     # state is qpos, qvel, can get with super()._get_obs() or self.mujoco_qpos/qvel
     # action is ..., same as control input

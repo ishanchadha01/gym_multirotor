@@ -450,7 +450,7 @@ class ActorCriticPolicy(BasePolicy):
         action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
-        model_arch: List[Type[nn.Sequential]] = None,
+        model_arch: List[Type[nn.Module]] = [],
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -481,6 +481,7 @@ class ActorCriticPolicy(BasePolicy):
             squash_output=squash_output,
             normalize_images=normalize_images,
         )
+        self.model_arch = model_arch # For pre-defined policy/value nets
 
         if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], dict):
             warnings.warn(
@@ -591,8 +592,7 @@ class ActorCriticPolicy(BasePolicy):
         #       net_arch here is an empty list and mlp_extractor does not
         #       really contain any layers (acts like an identity module).
         self.mlp_extractor = MlpExtractor(
-            self.model_arch[0],
-            self.model_arch[1]
+            model_arch=self.model_arch
         )
 
     def _build(self, lr_schedule: Schedule) -> None:
@@ -603,7 +603,7 @@ class ActorCriticPolicy(BasePolicy):
             lr_schedule(1) is the initial learning rate
         """
         # If torch modules passed in, don't build using MLPExtractor
-        if isinstance(self.net_arch[0], nn.Module):
+        if len(self.model_arch) == 2:
             self._build_mlp_module()
         else:
             self._build_mlp_extractor()
@@ -661,10 +661,10 @@ class ActorCriticPolicy(BasePolicy):
         # Preprocess the observation if needed
         features = self.extract_features(obs)
         if self.share_features_extractor:
-            latent_pi, latent_vf = self.mlp_extractor(features)
+            latent_pi, latent_vf = self.mlp_extractor(features, obs)
         else:
             pi_features, vf_features = features
-            latent_pi = self.mlp_extractor.forward_actor(pi_features)
+            latent_pi = self.mlp_extractor.forward_actor(pi_features, obs)
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
         # Evaluate the values for the given observations
         values = self.value_net(latent_vf)
@@ -746,10 +746,10 @@ class ActorCriticPolicy(BasePolicy):
         # Preprocess the observation if needed
         features = self.extract_features(obs)
         if self.share_features_extractor:
-            latent_pi, latent_vf = self.mlp_extractor(features)
+            latent_pi, latent_vf = self.mlp_extractor(features, obs)
         else:
             pi_features, vf_features = features
-            latent_pi = self.mlp_extractor.forward_actor(pi_features)
+            latent_pi = self.mlp_extractor.forward_actor(pi_features, obs)
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
         distribution = self._get_action_dist_from_latent(latent_pi)
         log_prob = distribution.log_prob(actions)
@@ -765,7 +765,7 @@ class ActorCriticPolicy(BasePolicy):
         :return: the action distribution.
         """
         features = super().extract_features(obs, self.pi_features_extractor)
-        latent_pi = self.mlp_extractor.forward_actor(features)
+        latent_pi = self.mlp_extractor.forward_actor(features, obs)
         return self._get_action_dist_from_latent(latent_pi)
 
     def predict_values(self, obs: PyTorchObs) -> th.Tensor:

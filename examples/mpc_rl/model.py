@@ -53,8 +53,8 @@ class MPCActor(nn.Module):
         y = self.linear3(y)
         y = F.sigmoid(y)
 
-        Q = y[:, :self.state_dim]
-        p = y[:, self.state_dim:]
+        Q = y[:, :(self.state_dim+self.control_dim)]
+        p = y[:, (self.state_dim+self.control_dim):]
         u = self.diff_mpc(x_init, Q, p)
         return u
 
@@ -79,7 +79,7 @@ class MPCCritic(nn.Module):
 
 #TODO: implement differentiable mpc
 class DifferentiableMPC(nn.Module):
-    def __init__(self, state_dim, control_dim, horizon=5, device='cpu'):
+    def __init__(self, state_dim, control_dim, horizon=1, device='cpu'):
         super().__init__()
         self.state_dim = state_dim
         self.control_dim = control_dim
@@ -91,6 +91,13 @@ class DifferentiableMPC(nn.Module):
 
     def forward(self, x_init, Q, p): # TODO: how to get x_init?
         num_batches = Q.shape[0]
+        num_state_ctrl = Q.shape[-1]
+        Q_eye = torch.eye(num_state_ctrl, device=Q.device, dtype=Q.dtype)
+        Q_eye = Q_eye.view(1, num_state_ctrl, num_state_ctrl).expand(*Q.shape, num_state_ctrl) # [n_batch, n_tau, n_tau]
+        Q_expanded = Q.unsqueeze(-1).expand_as(Q_eye)
+        Q = Q_expanded * Q_eye
+        x_init = x_init.float()
+
         F = torch.cat((self.A, self.B), dim=1).unsqueeze(0).unsqueeze(0).repeat(self.T, num_batches, 1, 1)
         x_pred, u_pred, objs_pred = MPC(
             self.state_dim, self.control_dim, self.T,
@@ -123,14 +130,16 @@ class ACMPC():
             policy_kwargs = {
                 'model_arch': [actor, critic]
             },
-            seed=0
+            seed=0,
+            n_steps=64 # 2048 rollout len by default, but this takes too long for MPC with LQR solver
         )
+        print("Created ACMPC model")
     
     def train(self):
         fp = "mpc_output_nowind.json"
         data = []
         for i in range(100):
-            self.actor_critic.learn(total_timesteps=1e5, log_interval=1)
+            self.actor_critic.learn(total_timesteps=10, log_interval=1)
             self.actor_critic.save("quadplus_mpc_nowind")
             obs = self.reset()
             
