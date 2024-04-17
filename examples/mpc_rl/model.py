@@ -77,9 +77,8 @@ class MPCCritic(nn.Module):
         return self.feats(obs)
 
 
-#TODO: implement differentiable mpc
 class DifferentiableMPC(nn.Module):
-    def __init__(self, state_dim, control_dim, horizon=1, device='cpu'):
+    def __init__(self, state_dim, control_dim, horizon=1, device='cuda'):
         super().__init__()
         self.state_dim = state_dim
         self.control_dim = control_dim
@@ -115,7 +114,7 @@ class ACMPC():
     def __init__(self, obs_len, state_dim, control_dim):
 
         # Create env
-        self.env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=4)
+        self.env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=32)
 
         # Actor, policy, neural cost map
         actor = MPCActor(state_dim=state_dim, control_dim=control_dim, obs_len=obs_len)
