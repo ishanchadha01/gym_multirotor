@@ -672,11 +672,7 @@ class ActorCriticPolicy(BasePolicy):
         values = self.value_net(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi)
         actions = distribution.get_actions(deterministic=deterministic)
-        # if actions.ndimension() > 2:
-        #     actions = actions[0]
         log_prob = distribution.log_prob(actions)
-        # if log_prob.ndimension() > 1:
-        #     log_prob = log_prob[0]
         actions = actions.reshape((-1, *self.action_space.shape))  # type: ignore[misc]
         return actions, values, log_prob
 

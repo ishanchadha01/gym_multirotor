@@ -114,7 +114,7 @@ class ACMPC():
     def __init__(self, obs_len, state_dim, control_dim):
 
         # Create env
-        self.env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=32)
+        self.env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=4)
 
         # Actor, policy, neural cost map
         actor = MPCActor(state_dim=state_dim, control_dim=control_dim, obs_len=obs_len)
@@ -130,7 +130,7 @@ class ACMPC():
                 'model_arch': [actor, critic]
             },
             seed=0,
-            n_steps=32 # 2048 rollout len by default, but this takes too long for MPC with LQR solver
+            n_steps=8 # 2048 rollout len by default, but this takes too long for MPC with LQR solver
         )
         print("Created ACMPC model")
     
@@ -140,7 +140,7 @@ class ACMPC():
         for i in range(100):
             self.actor_critic.learn(total_timesteps=10, log_interval=1)
             self.actor_critic.save("quadplus_mpc_nowind")
-            obs = self.actor_critic.reset()
+            obs = self.actor_critic.env.reset()
             
             # write to json file
             print(self.actor_critic.log_outputs)

@@ -1,0 +1,16 @@
+[
+    {
+        "time/iterations": 1.0,
+        "time/time_elapsed": 2.0,
+        "time/total_timesteps": 32.0,
+        "train/entropy_loss": -5.681181287765503,
+        "train/policy_gradient_loss": -0.004808074422180652,
+        "train/value_loss": 24.69310760498047,
+        "train/approx_kl": 0.0006721056997776031,
+        "train/clip_fraction": 0.0,
+        "train/loss": 9.799737930297852,
+        "train/explained_variance": -0.02748584747314453,
+        "train/n_updates": 10.0,
+        "train/clip_range": 0.2
+    }
+]
