@@ -79,7 +79,7 @@ def create_video(imgs, output_path, fps=10):
 
 
 def main_ppo_nowind():
-    vec_env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=4)
+    vec_env = make_vec_env('QuadrotorPlusHoverEnv-v0', n_envs=32)
     model = PPO("MlpPolicy", vec_env, verbose=1)
     fp = "ppo_output_nowind.json"
     data = []
@@ -102,7 +102,7 @@ def main_ppo_nowind():
         #     bigimg = vec_env.render("rgb_array")
         #     imgs.append(bigimg[:,:,::-1])
         # create_video(imgs, f"ppo_nowind_vids/vid_{i:04d}.mp4", fps=24)
-    f.close()
+    # f.close()
 
 
 def main_mpc_nowind():

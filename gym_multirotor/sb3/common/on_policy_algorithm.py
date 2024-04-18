@@ -180,7 +180,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
                 actions, values, log_probs = self.policy(obs_tensor)
-            actions = actions.cpu().numpy()
+            actions = actions.cpu().detach().numpy()
 
             # Rescale and perform action
             clipped_actions = actions
